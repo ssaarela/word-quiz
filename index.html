@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        div {
+            margin: auto;
+            text-align: center;
+            font-size: xx-large;
+            padding: 0.5em;
+        }
+        input {
+            font-size: x-large;
+        }
+        #check {
+            font-size: large;
+        }
+        #correct-answer {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div id="main">
+    <form onsubmit="return false">
+        <div>
+            <span id="question"></span>
+        </div>
+        <div>=</div>
+        <input type="text" id="answer" placeholder="vastauksesi"/>
+        <div>
+            <button type="submit" onclick="return checkAnswer() && false" id="check">Tarkista!</button>
+            <button type="submit" onclick="return nextQuestion() && false" id="next">Seuraava sana</button>
+        </div>
+        <div id="result"></div>
+        <div>Pisteet: <span id="score"></span></div>
+    </form>
+</div>
+<script src="levenshtein.min.js"></script>
+<script src="jquery-2.1.4.min.js"></script>
+<script src="words.js"></script>
+
+<script type="application/javascript">
+
+    var levenshtein = window.Levenshtein;
+    var $result = $('#result'),
+            $answer = $('#answer'),
+            $question = $('#question'),
+            $check = $('#check'),
+            $next = $('#next'),
+            $score = $('#score');
+
+    var questionIndex,
+			answerIndex,
+			questionLang,
+			answerLang,
+			question,
+			attempts,
+			required,
+			requiredCount;
+
+	function init() {
+		required = [];
+		for (var i=0; i < words.length; i++) {
+            words[i] = words[i].toUpperCase();
+			required[i] = 1;
+		}
+		requiredCount = words.length;
+
+		nextQuestion();
+        showScore();
+	}
+
+    function nextQuestion() {
+        attempts = 0;
+        $answer.val("");
+        $answer.attr("disabled", null);
+        $check.attr("disabled", null);
+        $result.html("");
+
+        nextQuestionIndex();
+
+        question = words[questionIndex];
+        $question.html(question);
+		$answer.attr("placeholder", languages[answerLang])
+        $answer.focus();
+    }
+	function nextQuestionIndex() {
+        if (requiredCount <= 0) {
+            $('#main').html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
+                    "<a href='#' onclick='location.reload()'>pelaa uudestaan</a>");
+        }
+		var idx = Math.floor(Math.random() * requiredCount);
+		var from = 0, to = 0;
+		for (var i=0; i<required.length; i++) {
+			to = from + required[i];
+			if (from <= idx && idx < to) {
+				questionIndex = i;
+				questionLang = questionIndex % 2;
+				answerLang = (questionLang + 1) % 2;
+				answerIndex = questionIndex + (questionLang ? -1 : +1);
+				return questionIndex;
+			}
+			from = to;
+		}
+		throw "Should not end-up in here!"
+	}
+    function incrementRequiredCount() {
+        required[questionIndex]++;
+        requiredCount++;
+    }
+    function decrementRequireCount() {
+        if (required[questionIndex] > 0) {
+            var decrement = Math.ceil(required[questionIndex] / 2);
+            required[questionIndex] -= decrement;
+            requiredCount -= decrement;
+        }
+    }
+    function closeQuestion() {
+        $answer.attr("disabled", "disabled");
+        $check.attr("disabled", "disabled");
+        showScore();
+        $next.focus();
+    }
+    function showScore() {
+        $score.html((words.length - requiredCount) + " / " + words.length);
+    }
+    function checkAnswer() {
+        var answer = $answer.val().toUpperCase();
+        var correctAnswer = words[answerIndex];
+        var result = levenshtein.get(correctAnswer, answer);
+        attempts++;
+        if (result === 0) {
+            var text;
+            switch (attempts) {
+                case 1: text = "Ensimmäisellä oikein! Mahtavaa!";
+                        decrementRequireCount();
+                    break;
+                case 2: text = "Oikein! Hienoa!";
+                    break;
+                default: text = "Löytyihän se, hyvä!";
+            }
+            $result.html(text);
+            closeQuestion();
+        } else {
+            if (attempts >= 3) {
+                $result.html("Voi harmi, ei vieläkään oikein. Oikea vastaus on <div id='correct-answer'>" + correctAnswer + "</div>");
+                incrementRequiredCount();
+                closeQuestion();
+            }
+            else if (result === 1) {
+                $result.html("Mieti vielä. " + result + " kirjain on väärin, puutuu tai on liikaa.");
+            } else if (result >= correctAnswer.length) {
+                $result.html("Hupsis! Meni kyllä ihan metsään.");
+            } else {
+                $result.html("Mieti vielä. " + result + " kirjainta on väärin, puutuu tai on liikaa.");
+            }
+        }
+        return false;
+    }
+	init();
+</script>
+</body>
+</html>
