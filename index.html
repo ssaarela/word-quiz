@@ -81,13 +81,13 @@
         words = [];
         var urlParams = getUrlParams(), i, j;
         if (urlParams.langs) {
-            languages = urlParams.langs.split('|');
+            languages = decodeURIComponent(urlParams.langs).split('|');
             for (i=0; i < languages.length; i++) {
-                languages[i] = decodeURIComponent(languages[i]);
+                languages[i] = languages[i];
             }
         }
         if (urlParams.words) {
-            words = urlParams.words.split('|');
+            words = decodeURIComponent(urlParams.words).split('|');
             for (i=0; i < words.length; i++) {
                 words[i] = words[i].split('_');
                 for (j=0; j < words[i].length; j++) {
@@ -230,14 +230,14 @@
             if (i > 0) param.push("|");
             for (var j=0; j < words[i].length; j++) {
                 if (j > 0) param.push("_");
-                param.push(encodeURIComponent(words[i][j]));
+                param.push(words[i][j]);
             }
         }
-        return param.join("");
+        return encodeURIComponent(param.join(""));
     }
     function languagesParameter(languages) {
-        var param = [encodeURIComponent(languages[0]), encodeURIComponent(languages[1])];
-        return param.join("|");
+        var param = [languages[0], languages[1]];
+        return encodeURIComponent(param.join("|"));
     }
     function toBookmarkable(languages, words) {
         window.location = "?langs=" + languagesParameter(languages) + "&words=" + wordsParameter(words);
