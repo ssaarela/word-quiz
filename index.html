@@ -14,8 +14,8 @@
         input {
             font-size: x-large;
         }
-        #check {
-            font-size: large;
+        #advance-btn {
+            font-size: x-large;
         }
         #correct-answer {
             font-weight: bold;
@@ -39,8 +39,7 @@
            <input type="text" id="answer" autocomplete='off' placeholder=""/>
         </div>
         <div>
-            <button type="submit" onclick="checkAnswer(); return false;" id="check">Tarkista!</button>
-            <button type="submit" onclick="nextQuestion(); return false;" id="next">Seuraava sana</button>
+            <button type="submit" onclick="advance(); return false;" id="advance-btn">Tarkista!</button>
         </div>
         <div id="result"></div>
         <div>Pisteet: <span id="score"></span></div>
@@ -57,8 +56,7 @@
     var $result = $('#result'),
             $answer = $('#answer'),
             $question = $('#question'),
-            $check = $('#check'),
-            $next = $('#next'),
+            $advance = $('#advance-btn'),
             $score = $('#score'),
             $game = $('#game'),
             $words = $('#words'),
@@ -114,11 +112,18 @@
         }
     }
 
+    function advance() {
+        if (question) {
+            checkAnswer();
+        } else {
+            nextQuestion();
+        }
+    }
     function nextQuestion() {
         attempts = 0;
         $answer.val("");
         $answer.attr("disabled", null);
-        $check.attr("disabled", null);
+        $advance.html("Tarkista!");
         $result.html("");
 
         nextQuestionIndex();
@@ -167,10 +172,11 @@
         }
     }
     function closeQuestion() {
+        question = null;
         $answer.attr("disabled", "disabled");
-        $check.attr("disabled", "disabled");
+        $advance.html("Seuraava kysymys");
         showScore();
-        $next.focus();
+        $advance.focus();
     }
     function showScore() {
         $score.html((wordCount - requiredCount) + " / " + wordCount);
@@ -208,11 +214,11 @@
                 closeQuestion();
             }
             else if (result === 1) {
-                $result.html("Mieti vielä. " + result + " kirjain on väärin, puutuu tai on liikaa.");
+                $result.html("Mieti vielä. " + result + " merkki on väärin, puutuu tai on liikaa.");
             } else if (result >= Math.ceil(correctAnswer.length*0.8)) {
                 $result.html("Hupsis! Meni kyllä ihan metsään.");
             } else {
-                $result.html("Mieti vielä. " + result + " kirjainta on väärin, puutuu tai on liikaa.");
+                $result.html("Mieti vielä. " + result + " merkkiä on väärin, puutuu tai on liikaa.");
             }
         }
         return false;
