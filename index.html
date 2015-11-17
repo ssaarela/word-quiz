@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>Sanakoeharjoitukset</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        div {
+        form div {
             margin: auto;
             text-align: center;
             font-size: xx-large;
-            padding: 0.5em;
+            padding: 0.2em;
         }
         input {
             font-size: x-large;
@@ -19,58 +20,91 @@
         #correct-answer {
             font-weight: bold;
         }
+        .info {
+            font-size: medium;
+        }
+        .words {
+            width: 45%;
+        }
     </style>
 </head>
 <body>
-<div id="main">
+<div id="game">
     <form onsubmit="return false">
         <div>
             <span id="question"></span>
         </div>
         <div>=</div>
-        <input type="text" id="answer" placeholder="vastauksesi"/>
         <div>
-            <button type="submit" onclick="return checkAnswer() && false" id="check">Tarkista!</button>
-            <button type="submit" onclick="return nextQuestion() && false" id="next">Seuraava sana</button>
+           <input type="text" id="answer" autocomplete='off' placeholder=""/>
+        </div>
+        <div>
+            <button type="submit" onclick="checkAnswer(); return false;" id="check">Tarkista!</button>
+            <button type="submit" onclick="nextQuestion(); return false;" id="next">Seuraava sana</button>
         </div>
         <div id="result"></div>
         <div>Pisteet: <span id="score"></span></div>
     </form>
+    <a href="#" onclick="editWords(); return false;">muokkaa sanoja</a>
 </div>
+<div id="words"></div>
 <script src="levenshtein.min.js"></script>
 <script src="jquery-2.1.4.min.js"></script>
-<script src="words.js"></script>
+<!--<script src="words.js"></script>-->
 
 <script type="application/javascript">
-
     var levenshtein = window.Levenshtein;
     var $result = $('#result'),
             $answer = $('#answer'),
             $question = $('#question'),
             $check = $('#check'),
             $next = $('#next'),
-            $score = $('#score');
+            $score = $('#score'),
+            $game = $('#game'),
+            $words = $('#words');
 
     var questionIndex,
-			answerIndex,
-			questionLang,
-			answerLang,
-			question,
-			attempts,
-			required,
-			requiredCount;
+            answerIndex,
+            questionLang,
+            answerLang,
+            question,
+            attempts,
+            required,
+            requiredCount,
+            wordCount,
+            words = [];
 
-	function init() {
-		required = [];
-		for (var i=0; i < words.length; i++) {
-            words[i] = words[i].toUpperCase();
-			required[i] = 1;
-		}
-		requiredCount = words.length;
+    function init() {
+        var urlParams = getUrlParams(), i, j;
+        if (urlParams.langs) {
+            languages = urlParams.langs.split('|');
+            for (i=0; i < languages.length; i++) {
+                languages[i] = decodeURIComponent(languages[i]);
+            }
+        }
+        if (urlParams.words) {
+            words = urlParams.words.split('|');
+            for (i=0; i < words.length; i++) {
+                words[i] = words[i].split('_');
+                for (j=0; j < words[i].length; j++) {
+                    words[i][j] = decodeURIComponent(words[i][j]);
+                }
+            }
+        }
 
-		nextQuestion();
+        requiredCount = 0;
+        wordCount = 0;
+        required = [];
+        for (i=0; i < words.length; i++) {
+            var len = words[i].length;
+            required[i] = len;
+            wordCount += len;
+            requiredCount += len;
+        }
+
+        nextQuestion();
         showScore();
-	}
+    }
 
     function nextQuestion() {
         attempts = 0;
@@ -81,31 +115,36 @@
 
         nextQuestionIndex();
 
-        question = words[questionIndex];
-        $question.html(question);
-		$answer.attr("placeholder", languages[answerLang])
+        question = getQuestion();
+        $question.html(htmlEscape(question));
+        $answer.attr("placeholder", htmlEscape(languages[answerLang]));
         $answer.focus();
     }
-	function nextQuestionIndex() {
+    function getQuestion() {
+        var synonymIndex = required[questionIndex] % words[questionIndex].length;
+        return words[questionIndex][synonymIndex];
+    }
+    function nextQuestionIndex() {
         if (requiredCount <= 0) {
-            $('#main').html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
-                    "<a href='#' onclick='location.reload()'>pelaa uudestaan</a>");
+            $game.html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
+                    "<a href='#' onclick='location.reload(); return false;'>pelaa uudestaan</a>");
+            return;
         }
-		var idx = Math.floor(Math.random() * requiredCount);
-		var from = 0, to = 0;
-		for (var i=0; i<required.length; i++) {
-			to = from + required[i];
-			if (from <= idx && idx < to) {
-				questionIndex = i;
-				questionLang = questionIndex % 2;
-				answerLang = (questionLang + 1) % 2;
-				answerIndex = questionIndex + (questionLang ? -1 : +1);
-				return questionIndex;
-			}
-			from = to;
-		}
-		throw "Should not end-up in here!"
-	}
+        var idx = Math.floor(Math.random() * requiredCount);
+        var from = 0, to = 0;
+        for (var i=0; i<required.length; i++) {
+            to = from + required[i];
+            if (from <= idx && idx < to) {
+                questionIndex = i;
+                questionLang = questionIndex % 2;
+                answerLang = (questionLang + 1) % 2;
+                answerIndex = questionIndex + (questionLang ? -1 : +1);
+                return questionIndex;
+            }
+            from = to;
+        }
+        throw "Should not end-up in here!"
+    }
     function incrementRequiredCount() {
         required[questionIndex]++;
         requiredCount++;
@@ -124,12 +163,21 @@
         $next.focus();
     }
     function showScore() {
-        $score.html((words.length - requiredCount) + " / " + words.length);
+        $score.html((wordCount - requiredCount) + " / " + wordCount);
     }
     function checkAnswer() {
-        var answer = $answer.val().toUpperCase();
-        var correctAnswer = words[answerIndex];
-        var result = levenshtein.get(correctAnswer, answer);
+        var givenAnswer = comparableWord($answer.val()).toUpperCase();
+        var correctAnswers = words[answerIndex];
+        var correctAnswer;
+        var result = 10000;
+        for (var i=0; i < correctAnswers.length; i++) {
+            var comparableAnswer = comparableWord(correctAnswers[i]);
+            var distance = levenshtein.get(comparableAnswer.toUpperCase(), givenAnswer);
+            if (distance < result) {
+                result = distance;
+                correctAnswer = comparableAnswer;
+            }
+        }
         attempts++;
         if (result === 0) {
             var text;
@@ -145,13 +193,13 @@
             closeQuestion();
         } else {
             if (attempts >= 3) {
-                $result.html("Voi harmi, ei vieläkään oikein. Oikea vastaus on <div id='correct-answer'>" + correctAnswer + "</div>");
+                $result.html("Voi harmi, ei vieläkään oikein. Oikea vastaus on <div id='correct-answer'>" + htmlEscape(correctAnswer) + "</div>");
                 incrementRequiredCount();
                 closeQuestion();
             }
             else if (result === 1) {
                 $result.html("Mieti vielä. " + result + " kirjain on väärin, puutuu tai on liikaa.");
-            } else if (result >= correctAnswer.length) {
+            } else if (result >= Math.ceil(correctAnswer.length*0.8)) {
                 $result.html("Hupsis! Meni kyllä ihan metsään.");
             } else {
                 $result.html("Mieti vielä. " + result + " kirjainta on väärin, puutuu tai on liikaa.");
@@ -159,7 +207,118 @@
         }
         return false;
     }
-	init();
+    function comparableWord(word) {
+        var i = word.indexOf(';');
+        if (i > 0) {
+            word = word.substring(0, i);
+        }
+        return word.trim();
+    }
+    function wordsParameter(words) {
+        var param = [];
+        for (var i=0; i < words.length; i++) {
+            if (i > 0) param.push("|");
+            for (var j=0; j < words[i].length; j++) {
+                if (j > 0) param.push("_");
+                param.push(encodeURIComponent(words[i][j]));
+            }
+        }
+        return param.join("");
+    }
+    function languagesParameter(languages) {
+        var param = [encodeURIComponent(languages[0]), encodeURIComponent(languages[1])];
+        return param.join("|");
+    }
+    function toBookmarkable(languages, words) {
+        window.location = "?langs=" + languagesParameter(languages) + "&words=" + wordsParameter(words);
+    }
+    function getUrlParams() {
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+    function editWords() {
+        $game.hide();
+        $words.show();
+        var html = [],
+                i;
+        html.push("<form><div><h3>Kielet:</h3>",
+                "<input class='languages' value=\"", htmlEscape(languages[0]), "\"/>",
+                "<input class='languages' value=\"", htmlEscape(languages[1]), "\"/>",
+                "</div>");
+        html.push("<div> <h3>Sanat:</h3> ");
+        html.push("<div class='info'>",
+                "Erota synonyymit toisistaan pystyviivalla (|). ",
+                "Älä käytä alaviivaa (_). ",
+                "Voit määrittää sanalle tarkenteen puolipisteellä (;). Puolipisteen jälkeista osaa ei huomioida vastauksen tarkistuksessa. ",
+                "Kun olet valmis, paina 'Tallenna!' ja ota sivun osoite ylös esim. kirjanmerkiksi. Voit myös jakaa sen linkkinä ystävillesi.",
+                "</div>");
+        for (i=0; i < words.length; i+=2) {
+            html.push("<div id='word-", i,"'>",
+                    "<input class='words' value=\"", htmlEscape(words[i].join('|')), "\"/>",
+                    "<input class='words' value=\"", htmlEscape(words[i+1].join('|')), "\"/>",
+                    "<input type='button' value='-' onclick='removeWord(", i,")'/>",
+                    "</div>");
+
+        }
+        html.push("</div>");
+        html.push("<div id='new-word'><input type='button' value='add word' onclick='newWord(", i,")'/></div>");
+        html.push("<div>");
+        html.push("<input type='button' value='Tallenna!' onclick='saveAndPlay()'/>");
+        html.push("<input type='button' value='Peruuta' onclick='cancelEdits()'/>");
+        html.push("</div>");
+        html.push("</form>");
+        $words.html(html.join(""));
+    }
+    function cancelEdits() {
+        $words.hide();
+        $game.show();
+    }
+    function removeWord(i) {
+        $('#word-' + i).remove();
+    }
+    function saveAndPlay() {
+        var languages = [],
+                words = [];
+        $('input.languages').each(function() {
+            var language = $(this).val();
+            languages.push(language);
+        });
+        $('input.words').each(function() {
+            var word = $(this).val();
+            if (word.indexOf('_') >= 0) {
+                alert("Sanoissa ei saa olla '_' (alaviiva) merkkiä: " + word);
+                throw "Illegal character: _";
+            }
+            var synonyms = word.split("|");
+            words.push(synonyms);
+        });
+        toBookmarkable(languages, words);
+    }
+    function newWord(i) {
+        var html = [];
+        html.push("<div id='word-", i,"'>",
+                "<input class='words'/>",
+                "<input class='words'/>",
+                "<input type='button' value='-' onclick='removeWord(", i,")'/>",
+                "</div>");
+        html.push("<div id='new-word'><input type='button' value='add word' onclick='newWord(", i+2,")'/></div>");
+        $('#new-word').replaceWith(html.join(""));
+    }
+    function htmlEscape(str) {
+        return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+    }
+    init();
 </script>
 </body>
 </html>
