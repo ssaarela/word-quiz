@@ -61,7 +61,8 @@
             $next = $('#next'),
             $score = $('#score'),
             $game = $('#game'),
-            $words = $('#words');
+            $words = $('#words'),
+            $gameForm = $('#game form');
 
     var questionIndex,
             answerIndex,
@@ -72,9 +73,12 @@
             required,
             requiredCount,
             wordCount,
-            words = [];
+            languages,
+            words;
 
     function init() {
+        languages = ["", ""];
+        words = [];
         var urlParams = getUrlParams(), i, j;
         if (urlParams.langs) {
             languages = urlParams.langs.split('|');
@@ -102,8 +106,12 @@
             requiredCount += len;
         }
 
-        nextQuestion();
-        showScore();
+        if (words.length > 1) {
+            nextQuestion();
+            showScore();
+        } else {
+            $gameForm.hide();
+        }
     }
 
     function nextQuestion() {
@@ -126,8 +134,10 @@
     }
     function nextQuestionIndex() {
         if (requiredCount <= 0) {
-            $game.html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
-                    "<a href='#' onclick='location.reload(); return false;'>pelaa uudestaan</a>");
+            if (words.length > 0) {
+                $game.html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
+                        "<a href='#' onclick='location.reload(); return false;'>pelaa uudestaan</a>");
+            }
             return;
         }
         var idx = Math.floor(Math.random() * requiredCount);
