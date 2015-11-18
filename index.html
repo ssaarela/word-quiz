@@ -23,7 +23,7 @@
         .info {
             font-size: medium;
         }
-        .words {
+        .languages, .words {
             width: 45%;
         }
     </style>
@@ -36,7 +36,7 @@
         </div>
         <div>=</div>
         <div>
-           <input type="text" id="answer" autocomplete='off' placeholder=""/>
+           <input type="text" id="answer" onkeyup="typeWord()" autocomplete='off' placeholder=""/>
         </div>
         <div>
             <button type="submit" onclick="advance(); return false;" id="advance-btn">Tarkista!</button>
@@ -63,6 +63,7 @@
             $gameForm = $('#game form');
 
     var questionIndex,
+            synonymIndex,
             answerIndex,
             questionLang,
             answerLang,
@@ -70,11 +71,13 @@
             attempts,
             required,
             requiredCount,
+            score,
             wordCount,
             languages,
             words;
 
     function init() {
+        score = 0;
         languages = ["", ""];
         words = [];
         var urlParams = getUrlParams(), i, j;
@@ -99,7 +102,10 @@
         required = [];
         for (i=0; i < words.length; i++) {
             var len = words[i].length;
-            required[i] = len;
+            required[i] = [];
+            for (j=0; j < len; j++) {
+                required[i][j] = 1;
+            }
             wordCount += len;
             requiredCount += len;
         }
@@ -112,9 +118,20 @@
         }
     }
 
+    function typeWord() {
+        if ($answer.val().length === 0) {
+            $advance.html("Näytä sana");
+        } else {
+            $advance.html("Tarkista!");
+        }
+    }
     function advance() {
         if (question) {
-            checkAnswer();
+            if ($answer.val().length === 0) {
+                showAnswer();
+            } else {
+                checkAnswer();
+            }
         } else {
             nextQuestion();
         }
@@ -123,7 +140,7 @@
         attempts = 0;
         $answer.val("");
         $answer.attr("disabled", null);
-        $advance.html("Tarkista!");
+        $advance.html("Näytä sana");
         $result.html("");
 
         nextQuestionIndex();
@@ -134,13 +151,17 @@
         $answer.focus();
     }
     function getQuestion() {
-        var synonymIndex = required[questionIndex] % words[questionIndex].length;
         return words[questionIndex][synonymIndex];
+    }
+    function showAnswer() {
+        $result.html(correctAnswerHtml());
+        incrementRequiredCount();
+        closeQuestion();
     }
     function nextQuestionIndex() {
         if (requiredCount <= 0) {
             if (words.length > 0) {
-                $game.html("<h1>Erinomaista!</h1> <h3>Osaat kaikki sanat :)</h3>" +
+                $game.html("<h1>Erinomaista!</h1> <h3>Osaat kaikki :)</h3>" +
                         "<a href='#' onclick='location.reload(); return false;'>pelaa uudestaan</a>");
             }
             return;
@@ -148,27 +169,33 @@
         var idx = Math.floor(Math.random() * requiredCount);
         var from = 0, to = 0;
         for (var i=0; i<required.length; i++) {
-            to = from + required[i];
-            if (from <= idx && idx < to) {
-                questionIndex = i;
-                questionLang = questionIndex % 2;
-                answerLang = (questionLang + 1) % 2;
-                answerIndex = questionIndex + (questionLang ? -1 : +1);
-                return questionIndex;
+            for (var j=0; j < required[i].length; j++) {
+                to = from + required[i][j];
+                if (from <= idx && idx < to) {
+                    questionIndex = i;
+                    synonymIndex = j;
+                    questionLang = questionIndex % 2;
+                    answerLang = (questionLang + 1) % 2;
+                    answerIndex = questionIndex + (questionLang ? -1 : +1);
+                    return questionIndex;
+                }
+                from = to;
             }
-            from = to;
         }
         throw "Should not end-up in here!"
     }
     function incrementRequiredCount() {
-        required[questionIndex]++;
+        required[questionIndex][synonymIndex]++;
         requiredCount++;
     }
     function decrementRequireCount() {
-        if (required[questionIndex] > 0) {
-            var decrement = Math.ceil(required[questionIndex] / 2);
-            required[questionIndex] -= decrement;
+        if (required[questionIndex][synonymIndex] > 0) {
+            var decrement = Math.ceil(required[questionIndex][synonymIndex] / 2);
+            required[questionIndex][synonymIndex] -= decrement;
             requiredCount -= decrement;
+            if (required[questionIndex][synonymIndex] <= 0) {
+                score++;
+            }
         }
     }
     function closeQuestion() {
@@ -179,7 +206,21 @@
         $advance.focus();
     }
     function showScore() {
-        $score.html((wordCount - requiredCount) + " / " + wordCount);
+        $score.html(score + " / " + wordCount);
+    }
+    function correctAnswerHtml() {
+        var html = [];
+        var correctAnswers = words[answerIndex];
+        if (correctAnswers.length === 1) {
+            html.push("<div>Oikea vastaus on: ");
+        } else {
+            html.push("<div>Oikea vastaus on jokin näistä: ");
+        }
+        for (var i=0; i < correctAnswers.length; i++) {
+            html.push("<div id='correct-answer'>", htmlEscape(correctAnswers[i]), "</div>")
+        }
+        html.push("</div>");
+        return html.join("");
     }
     function checkAnswer() {
         var givenAnswer = comparableWord($answer.val()).toUpperCase();
@@ -209,7 +250,7 @@
             closeQuestion();
         } else {
             if (attempts >= 3) {
-                $result.html("Voi harmi, ei vieläkään oikein. Oikea vastaus on <div id='correct-answer'>" + htmlEscape(correctAnswer) + "</div>");
+                $result.html("Voi harmi, ei vieläkään oikein. " + correctAnswerHtml());
                 incrementRequiredCount();
                 closeQuestion();
             }
