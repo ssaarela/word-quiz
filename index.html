@@ -287,7 +287,10 @@
         return encodeURIComponent(param.join("|"));
     }
     function toBookmarkable(languages, words) {
-        window.location = "?langs=" + languagesParameter(languages) + "&words=" + wordsParameter(words);
+        var query = "?langs=" + languagesParameter(languages) + "&words=" + wordsParameter(words);
+        if (query.length <= 2000 || confirm('URL:n pituus on yli 2000 merkkiä, joten sanasto ei välttämättä toimi kaikilla selaimilla. Haluatko jatkaa?')) {
+            window.location = query;
+        }
     }
     function getUrlParams() {
         var vars = [], hash;
