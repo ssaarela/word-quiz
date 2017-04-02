@@ -304,17 +304,26 @@
         $words.show();
         var html = [],
                 i;
+        html.push("<h3>Ohjeet</h3>",
+                "<div class='info'><ul>",
+                "<li>Aloita määrittelemällä harjoituksen kielet, esim. <i>suomeksi</i> ja <i>in english</i> tai <i>alkuaine</i> ja <i>tunnus</i></li>",
+                "<li>Lisää sanoja painamalla 'Add word'.</li>",
+                "<li>Voit poistaa sanaparin painamalla rivin oikealla olevaa miinusta</li>",
+                "<li>Erota synonyymit toisistaan pystyviivalla (|), esim. <i>keijukainen | keiju</i></li>",
+                "<li>Voit määrittää sanalle tarkenteen puolipisteellä (;). Puolipisteen jälkeista osaa ei huomioida vastauksen tarkistuksessa. Esim. <i>kuusi; numero</i> vs <i>kuusi; puu</i></li></li>",
+                "<li>Älä käytä alaviivaa (_).</li>",
+                "<li>Paina 'Pelaa!', kun sanasto on valmis.</li>",
+                "<li>Tallenna sivun osoite (URL). Sanastoa ei tallenneta palvelimelle vaan se on kokonaisuudessaan sivun osoitteessa. Mikäli URL häviää, häviää myös sanasto.</li>",
+                "<li>Sanaston pituutta rajoittaa vain käytetty selain. Eri selaimet sallivat eri mittaisia osoitteita, mutta 2000 merkkiä on turvallinen raja.</li>",
+                "<li>Vinkki: lyhennä pitkä URL käyttäen esim. <a href='https://bit.ly'>https://bit.ly</a> -palvelua</li>",
+                "<li>Voit jakaa sanaston ystävillesi linkkinä.</li>",
+                "<li>Voit muokata sanastoa koska vain, mutta ota muokattu URL talteen ja jos olet jakanut sen kavereillesi, lähetä heille myös korjattu versio.</li>",
+                "</ul></div>");
         html.push("<form><div><h3>Kielet:</h3>",
                 "<input class='languages' value=\"", htmlEscape(languages[0]), "\"/>",
                 "<input class='languages' value=\"", htmlEscape(languages[1]), "\"/>",
                 "</div>");
         html.push("<div> <h3>Sanat:</h3> ");
-        html.push("<div class='info'>",
-                "Erota synonyymit toisistaan pystyviivalla (|). ",
-                "Älä käytä alaviivaa (_). ",
-                "Voit määrittää sanalle tarkenteen puolipisteellä (;). Puolipisteen jälkeista osaa ei huomioida vastauksen tarkistuksessa. ",
-                "Kun olet valmis, paina 'Tallenna!' ja ota sivun osoite ylös esim. kirjanmerkiksi. Voit myös jakaa sen linkkinä ystävillesi.",
-                "</div>");
         for (i=0; i < words.length; i+=2) {
             html.push("<div id='word-", i,"'>",
                     "<input class='words' value=\"", htmlEscape(words[i].join('|')), "\"/>",
@@ -324,9 +333,9 @@
 
         }
         html.push("</div>");
-        html.push("<div id='new-word'><input type='button' value='add word' onclick='newWord(", i,")'/></div>");
+        html.push("<div id='new-word'><input type='button' value='Add word' onclick='newWord(", i,")'/></div>");
         html.push("<div>");
-        html.push("<input type='button' value='Tallenna!' onclick='saveAndPlay()'/>");
+        html.push("<input type='button' value='Pelaa!' onclick='saveAndPlay()'/>");
         html.push("<input type='button' value='Peruuta' onclick='cancelEdits()'/>");
         html.push("</div>");
         html.push("</form>");
