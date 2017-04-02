@@ -272,12 +272,20 @@
         return word.trim();
     }
     function wordsParameter(words) {
-        var param = [];
+        var param = [],
+            uniqueWords = [{}, {}];
         for (var i=0; i < words.length; i++) {
             if (i > 0) param.push("|");
             for (var j=0; j < words[i].length; j++) {
+                var word = words[i][j].trim();
+                if (uniqueWords[i % 2][word]) {
+                    alert('Sama sana löytyi kahdelta riviltä: ' + words[i][j] +
+                        ". Määritä käännös synonyyminä tai käytä tarkennetta erottamaan merkitykset toisistaan.");
+                    throw "Duplicate word: " + words[i][j];
+                }
+                uniqueWords[i % 2][word] = true;
                 if (j > 0) param.push("_");
-                param.push(words[i][j]);
+                param.push(word);
             }
         }
         return encodeURIComponent(param.join(""));
@@ -312,15 +320,14 @@
                 "<li>Aloita määrittelemällä harjoituksen kielet, esim. <i>suomeksi</i> ja <i>in english</i> tai <i>alkuaine</i> ja <i>tunnus</i></li>",
                 "<li>Lisää sanoja painamalla 'Add word'.</li>",
                 "<li>Voit poistaa sanaparin painamalla rivin oikealla olevaa miinusta</li>",
-                "<li>Erota synonyymit toisistaan pystyviivalla (|), esim. <i>keijukainen | keiju</i></li>",
-                "<li>Voit määrittää sanalle tarkenteen puolipisteellä (;). Puolipisteen jälkeista osaa ei huomioida vastauksen tarkistuksessa. Esim. <i>kuusi; numero</i> vs <i>kuusi; puu</i></li></li>",
+                "<li>Erota synonyymit toisistaan pystyviivalla (|), esim. <i>keijukainen | keiju</i> = <i>fairy | sprite</i></li>",
+                "<li>Voit määrittää sanalle tarkenteen puolipisteellä (;). Puolipisteen jälkeista osaa ei huomioida vastauksen tarkistuksessa. Esim. <i>hän; mies</i> = <i>he</i> ja <i>hän; nainen</i> = <i>she</i></li></li>",
                 "<li>Älä käytä alaviivaa (_).</li>",
-                "<li>Paina 'Pelaa!', kun sanasto on valmis.</li>",
-                "<li>Tallenna sivun osoite (URL). Sanastoa ei tallenneta palvelimelle vaan se on kokonaisuudessaan sivun osoitteessa. Mikäli URL häviää, häviää myös sanasto.</li>",
-                "<li>Sanaston pituutta rajoittaa vain käytetty selain. Eri selaimet sallivat eri mittaisia osoitteita, mutta 2000 merkkiä on turvallinen raja.</li>",
-                "<li>Vinkki: lyhennä pitkä URL käyttäen esim. <a href='https://bit.ly'>https://bit.ly</a> -palvelua</li>",
+                "<li>Paina 'Pelaa!', kun sanasto on valmis ja <b>tallenna sivun osoite</b> (URL). Sanastoa ei tallenneta palvelimelle vaan se on kokonaisuudessaan sivun osoitteessa. Mikäli URL häviää, häviää myös sanasto.</li>",
+                "<li>Sanaston pituutta rajoittaa käytetty selain. Eri selaimet sallivat eri mittaisia osoitteita, mutta 2000 merkkiä on turvallinen raja.</li>",
                 "<li>Voit jakaa sanaston ystävillesi linkkinä.</li>",
-                "<li>Voit muokata sanastoa koska vain, mutta ota muokattu URL talteen ja jos olet jakanut sen kavereillesi, lähetä heille myös korjattu versio.</li>",
+                "<li>Vinkki: lyhennä pitkä URL käyttäen esim. <a href='https://bit.ly'>https://bit.ly</a> -palvelua. Lyhentäminen auttaa linkin kirjoittamisessa, mutta ei vaikuta sanaston maksimipituuteen.</li>",
+                "<li>Voit muokata sanastoa koska vain, mutta ota muokattu URL talteen ja, jos olet jakanut sen kavereillesi, lähetä heille myös korjattu versio.</li>",
                 "</ul></div>");
         html.push("<form><div><h3>Kielet:</h3>",
                 "<input class='languages' value=\"", htmlEscape(languages[0]), "\"/>",
